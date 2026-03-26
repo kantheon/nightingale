@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nightingale</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4e9;
+      --text-muted: #8b8fa3;
+      --accent: #4aaed9;
+      --accent-dim: #4aaed920;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .shift-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .status-dot.active { background: var(--green); }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+    .btn.primary:hover { opacity: 0.9; }
+
+    /* Main layout */
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr 1fr;
+      overflow: hidden;
+    }
+
+    /* Sidebar — patients */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 16px;
+      overflow-y: auto;
+      background: var(--surface);
+    }
+
+    .sidebar h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .patient-card {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 13px;
+    }
+
+    .patient-card:hover { border-color: var(--accent); }
+
+    .patient-card .bed { font-weight: 600; color: var(--accent); }
+    .patient-card .meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+    .empty-state {
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 40px 16px;
+      line-height: 1.6;
+    }
+
+    /* Input panel */
+    .input-panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      padding: 16px;
+    }
+
+    .input-panel h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .format-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .format-tab {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .format-tab.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    textarea {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      line-height: 1.6;
+    }
+
+    textarea:focus { outline: none; border-color: var(--accent); }
+
+    textarea::placeholder { color: var(--text-muted); }
+
+    .input-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .hint { font-size: 11px; color: var(--text-muted); }
+
+    /* Output panel */
+    .output-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .output-header h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .output-content {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 13px;
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      line-height: 1.7;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .output-content .streaming-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: var(--accent);
+      animation: blink 0.8s infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .copy-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--green);
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    .copy-toast.show { opacity: 1; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .main { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .loading-overlay.hidden { display: none; }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text { color: var(--text-muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Loading model...</div>
+  </div>
+
+  <header>
+    <div class="logo"><span>NIGHTINGALE</span></div>
+    <div class="shift-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="shiftLabel">No active shift</span>
+      <button class="btn primary" id="shiftBtn" onclick="toggleShift()">Start Shift</button>
+      <button class="btn" onclick="saveShift()">Save Handoff</button>
+      <button class="btn" onclick="loadShiftPicker()">Load Handoff</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- Sidebar: Patient list -->
+    <div class="sidebar">
+      <h3>Patients This Shift</h3>
+      <div id="patientList">
+        <div class="empty-state">
+          Start a shift and document your first patient to see them here.
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-panel">
+      <h3>Quick Notes</h3>
+      <div class="format-tabs">
+        <button class="format-tab active" data-format="assessment" onclick="setFormat(this)">Assessment</button>
+        <button class="format-tab" data-format="soap" onclick="setFormat(this)">SOAP Note</button>
+        <button class="format-tab" data-format="handoff" onclick="setFormat(this)">Handoff (SBAR)</button>
+      </div>
+      <textarea
+        id="inputArea"
+        placeholder="Type your clinical notes here in any format...
+
+Example:
+bed 4 johnson 78F post-op day 2 hip. vitals 128/82 hr 76 temp 98.4. wound clean dry intact. ambulated to bathroom assist x1. pain 4/10 on scheduled tylenol. oriented x4 lungs clear bilat"
+      ></textarea>
+      <div class="input-actions">
+        <span class="hint">Shift + Enter to submit</span>
+        <button class="btn primary" onclick="submitNotes()">Generate Note</button>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="output-panel">
+      <div class="output-header">
+        <h3>Formatted Documentation</h3>
+        <button class="btn" onclick="copyOutput()">Copy to Clipboard</button>
+      </div>
+      <div class="output-content" id="outputContent">
+        <span style="color: var(--text-muted)">Formatted clinical note will appear here.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="copy-toast" id="copyToast">Copied to clipboard</div>
+
+  <script>
+    let currentFormat = 'assessment';
+    let shiftActive = false;
+    let outputText = '';
+
+    // Format tabs
+    function setFormat(el) {
+      document.querySelectorAll('.format-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentFormat = el.dataset.format;
+    }
+
+    // Shift management
+    async function toggleShift() {
+      if (shiftActive) {
+        await fetch('/api/end-shift', { method: 'POST' });
+        shiftActive = false;
+        document.getElementById('statusDot').classList.remove('active');
+        document.getElementById('shiftLabel').textContent = 'No active shift';
+        document.getElementById('shiftBtn').textContent = 'Start Shift';
+        document.getElementById('patientList').innerHTML = '<div class="empty-state">Start a shift to begin.</div>';
+      } else {
+        showLoading('Starting shift and loading model...');
+        const res = await fetch('/api/start-shift', { method: 'POST' });
+        hideLoading();
+        if (res.ok) {
+          shiftActive = true;
+          document.getElementById('statusDot').classList.add('active');
+          document.getElementById('shiftLabel').textContent = 'Shift active';
+          document.getElementById('shiftBtn').textContent = 'End Shift';
+        }
+      }
+    }
+
+    async function saveShift() {
+      if (!shiftActive) return alert('No active shift to save.');
+      const res = await fetch('/api/save-shift', { method: 'POST' });
+      const data = await res.json();
+      alert('Shift saved for handoff: ' + data.path);
+    }
+
+    async function loadShiftPicker() {
+      const res = await fetch('/api/shifts');
+      const shifts = await res.json();
+      if (shifts.length === 0) return alert('No saved shifts found.');
+
+      const choice = prompt(
+        'Available shifts:\n' +
+        shifts.map((s, i) => `${i + 1}. ${s.filename} (${s.patients} patients, ${s.saved_at})`).join('\n') +
+        '\n\nEnter number to load:'
+      );
+
+      if (choice) {
+        const idx = parseInt(choice) - 1;
+        if (idx >= 0 && idx < shifts.length) {
+          showLoading('Loading shift handoff...');
+          const loadRes = await fetch('/api/load-shift', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: shifts[idx].path }),
+          });
+          hideLoading();
+          if (loadRes.ok) {
+            shiftActive = true;
+            document.getElementById('statusDot').classList.add('active');
+            document.getElementById('shiftLabel').textContent = 'Shift active (loaded handoff)';
+            document.getElementById('shiftBtn').textContent = 'End Shift';
+            refreshPatients();
+          }
+        }
+      }
+    }
+
+    // Submit notes
+    async function submitNotes() {
+      const text = document.getElementById('inputArea').value.trim();
+      if (!text) return;
+      if (!shiftActive) return alert('Start a shift first.');
+
+      const output = document.getElementById('outputContent');
+      output.innerHTML = '<span class="streaming-cursor"></span>';
+      outputText = '';
+
+      const res = await fetch('/api/document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, format: currentFormat }),
+      });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+            try {
+              const data = JSON.parse(line.slice(6));
+              outputText += data.token;
+              output.innerHTML = escapeHtml(outputText) + '<span class="streaming-cursor"></span>';
+              output.scrollTop = output.scrollHeight;
+            } catch {}
+          }
+          if (line === 'data: [DONE]') {
+            output.innerHTML = escapeHtml(outputText);
+          }
+        }
+      }
+
+      refreshPatients();
+    }
+
+    // Copy output
+    function copyOutput() {
+      if (!outputText) return;
+      navigator.clipboard.writeText(outputText);
+      const toast = document.getElementById('copyToast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1500);
+    }
+
+    // Refresh patient sidebar
+    async function refreshPatients() {
+      const res = await fetch('/api/patients');
+      const patients = await res.json();
+      const list = document.getElementById('patientList');
+
+      const entries = Object.entries(patients);
+      if (entries.length === 0) {
+        list.innerHTML = '<div class="empty-state">No patients documented yet.</div>';
+        return;
+      }
+
+      list.innerHTML = entries.map(([id, info]) => `
+        <div class="patient-card">
+          <div class="bed">${id.replace('_', ' ').toUpperCase()}</div>
+          <div class="meta">${info.updates} update${info.updates !== 1 ? 's' : ''}</div>
+        </div>
+      `).join('');
+    }
+
+    // Keyboard shortcut
+    document.getElementById('inputArea').addEventListener('keydown', (e) => {
+      if (e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        submitNotes();
+      }
+    });
+
+    // Helpers
+    function escapeHtml(text) {
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function showLoading(msg) {
+      document.getElementById('loadingText').textContent = msg;
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    // Hide loading on page load
+    hideLoading();
+  </script>
+</body>
+</html>

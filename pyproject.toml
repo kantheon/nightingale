@@ -1,0 +1,31 @@
+[project]
+name = "nightingale-ai"
+version = "0.1.0"
+description = "Open-source clinical documentation assistant. Runs locally. No patient data ever leaves the device."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Kantheon"}]
+dependencies = [
+    "kandiga>=0.7.1",
+    "fastapi",
+    "uvicorn[standard]",
+    "jinja2",
+]
+
+[project.urls]
+Homepage = "https://github.com/kantheon/nightingale"
+Repository = "https://github.com/kantheon/nightingale"
+
+[project.scripts]
+nightingale = "nightingale.cli:main"
+
+[build-system]
+requires = ["setuptools>=45"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["nightingale*"]
+
+[tool.setuptools.package-data]
+nightingale = ["static/**/*", "templates/**/*"]
