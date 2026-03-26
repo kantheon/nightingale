@@ -71,6 +71,20 @@ async def update_patient(request: Request):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+@app.post("/api/ask")
+async def ask_question(request: Request):
+    body = await request.json()
+    text = body.get("text", "")
+    engine = get_engine()
+
+    def stream():
+        for token in engine.ask(text):
+            yield f"data: {json.dumps({'token': token})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
 @app.get("/api/patients")
 async def get_patients():
     engine = get_engine()
